@@ -596,8 +596,15 @@ export class DeployManager {
     mainProjectName: string | undefined,
     scenarioName: string | undefined,
     overwriteExisting: boolean,
-    targetFolderParameter: string | undefined
+    targetFolderParameter: string | undefined,
+    createArchivePath: string | undefined
   ): void {
+    if (createArchivePath) {
+      if (path.extname(createArchivePath) !== '.zip') {
+        throw new Error('oops');
+      }
+    }
+
     const scenarioFilePath: string = DeployScenarioConfiguration.getConfigFilePath(
       scenarioName,
       this._rushConfiguration
