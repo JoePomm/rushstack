@@ -36,6 +36,12 @@ declare module 'npm-packlist' {
   }
 }
 
+// This declaration is needed by the JSZip typings, which have an accidental dependency on the DOM APIs
+declare global {
+  // eslint-disable-next-line
+  type Blob = any;
+}
+
 /**
  * The deploy-matadata.json file format.
  */
