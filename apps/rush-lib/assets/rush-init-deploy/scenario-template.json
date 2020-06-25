@@ -47,6 +47,14 @@
   // "linkCreation": "script",
 
   /**
+   * If this path is specified, then after "rush deploy" copies the files to
+   * the deployment target folder (common/deploy), the files from this folder
+   * will be recursively copied into the target folder. This can be used to provide
+   * additional configuration files or scripts needed by the server.
+   */
+  // "postCopySourceFolder": "repo-tools/assets/deploy-config",
+
+  /**
    * Customize how Rush projects are processed during deployment.
    */
   "projectSettings": [

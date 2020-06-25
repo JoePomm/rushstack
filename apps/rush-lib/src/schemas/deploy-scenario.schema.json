@@ -35,6 +35,11 @@
       "enum": ["default", "script", "none"]
     },
 
+    "postCopySourceFolder": {
+      "description": "If this path is specified, then after \"rush deploy\" copies the files to the deployment target folder (common/deploy), the files from this folder will be recursively copied into the target folder. This can be used to provide additional configuration files or scripts needed by the server.",
+      "type": "string"
+    },
+
     "projectSettings": {
       "description": "Customize how Rush projects are processed during deployment.",
       "type": "array",

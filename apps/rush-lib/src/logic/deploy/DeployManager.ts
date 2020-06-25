@@ -510,6 +510,9 @@ export class DeployManager {
         }
       }
     }
+
+    console.log('POSTCOPY FOLDER: ' + deployState.scenarioConfiguration.json.postCopySourceFolder);
+
     this._createArchive(deployState);
   }
 
