@@ -19,6 +19,8 @@ import {
   NewlineKind,
   Text
 } from '@rushstack/node-core-library';
+import * as JSZip from 'jszip';
+import * as fs from 'fs';
 import { RushConfiguration } from '../../api/RushConfiguration';
 import { SymlinkAnalyzer, ILinkInfo } from './SymlinkAnalyzer';
 import { RushConfigurationProject } from '../../api/RushConfigurationProject';
@@ -502,7 +504,84 @@ export class DeployManager {
         }
       }
     }
+    this._createArchive(deployState);
   }
+
+  private _createArchive(deployState: IDeployState): void {
+    const deployPackageJson: IPackageJson = {
+      name: path.basename(deployState.mainProjectName) + '-deploy',
+      version: '0.0.0',
+      scripts: {
+        start: 'cd ./apps/hd-server/lib/ && npm start'
+      }
+    };
+    JsonFile.save(deployPackageJson, path.join(deployState.targetRootFolder, 'package.json'));
+    console.log('Invoking "JSZip"...\n');
+    let zip = this._getZipOfFolder(deployState.targetRootFolder);
+    zip
+      .generateAsync({
+        type: 'nodebuffer',
+        platform: 'UNIX' // <-- you need it here
+      })
+      .then(function (b) {
+        fs.writeFileSync('symlink.zip', b);
+      });
+
+    console.log('\nCompleted "JSZip" successfully.');
+  }
+
+  private _getFilePathsRecursively = (dir: string): string[] => {
+    // returns a flat array of absolute paths of all files recursively contained in the dir
+    let results: string[] = [];
+    let list = fs.readdirSync(dir);
+
+    var pending = list.length;
+    if (!pending) return results;
+
+    for (let file of list) {
+      file = path.resolve(dir, file);
+
+      let stat = fs.lstatSync(file);
+
+      if (stat && stat.isDirectory()) {
+        results = results.concat(this._getFilePathsRecursively(file));
+      } else {
+        results.push(file);
+      }
+
+      if (!--pending) return results;
+    }
+
+    return results;
+  };
+
+  private _getZipOfFolder = (dir: string): typeof JSZip => {
+    // returns a JSZip instance filled with contents of dir.
+    let allPaths = this._getFilePathsRecursively(dir);
+
+    let zip = new JSZip();
+    for (let filePath of allPaths) {
+      // let addPath = path.relative(path.join(dir, '..'), filePath); // use this instead if you want the source folder itself in the zip
+      let addPath = path.relative(dir, filePath); // use this instead if you don't want the source folder itself in the zip
+      let data = fs.readFileSync(filePath);
+      let stat = fs.lstatSync(filePath);
+      let permissions = stat.mode;
+
+      if (stat.isSymbolicLink()) {
+        zip.file(addPath, fs.readlinkSync(filePath), {
+          unixPermissions: parseInt('120755', 8), // This permission can be more permissive than necessary for non-executables but we don't mind.
+          dir: stat.isDirectory()
+        });
+      } else {
+        zip.file(addPath, data, {
+          unixPermissions: permissions,
+          dir: stat.isDirectory()
+        });
+      }
+    }
+
+    return zip;
+  };
 
   /**
    * The main entry point for performing a deployment.
